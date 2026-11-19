@@ -162,7 +162,10 @@ async function save(){
     cfg.version=1;cfg.addons.forEach(a=>{if(a.url)a.url=a.url.replace(/^stremio:\/\//,'https://')});
     const body={message:'config',content:btoa(String.fromCharCode(...new TextEncoder().encode(await enc(cfg,ls('pw'))))),...(sha?{sha}:{})};
     const r=await fetch(API,{method:'PUT',headers:{...hdr(),'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(!r.ok){const t=await r.text();throw new Error(r.status+' '+t.slice(0,120))}
+    if(!r.ok){const t=await r.text();
+      if(r.status===403||r.status===404)throw new Error('Sin permiso de escritura (HTTP '+r.status+'). Crea un token nuevo con Repository access = gonitarot/nebulatv y Contents = Read and write, y pulsa Desconectar para pegarlo.');
+      if(r.status===409||r.status===422)throw new Error('Conflicto: recarga la página e inténtalo otra vez');
+      throw new Error(r.status+' '+t.slice(0,120))}
     sha=(await r.json()).content.sha;dirty=false;render();msg('Guardado ✓ la TV lo recibe al abrir/sincronizar','ok');
   }catch(e){msg('Error: '+e.message,'er')}
   b.disabled=false;
